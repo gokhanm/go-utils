@@ -74,7 +74,7 @@ func Float64ToSqlNullFloat64(t float64) sql.NullFloat64 {
 }
 
 func BoolenToSqlNullBoolen(t bool) sql.NullBool {
-	if t == false {
+	if !t {
 		return sql.NullBool{}
 	}
 
