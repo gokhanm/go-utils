@@ -1,85 +1,96 @@
 package goutils
 
 import (
+	"reflect"
 	"testing"
-)
-
-var (
-	layout = "2006-01-02 15:04:05"
+	"time"
 )
 
 func TestIsTimeAfter(t *testing.T) {
-	var tests = []struct {
+	type args struct {
+		a time.Time
+		b time.Time
+	}
+	tests := []struct {
 		name string
-		a, b string
+		args args
 		want bool
 	}{
-		{name: "diffrentDayFalse", a: "2021-10-02 15:04:05", b: "2006-01-02 15:04:05", want: false},
-		{name: "diffrentDayTrue", a: "2006-01-02 15:04:05", b: "2021-10-02 15:04:05", want: true},
-		{name: "diffrentSecondFalse", a: "2021-10-02 15:04:06", b: "2021-10-02 15:04:05", want: false},
-		{name: "diffrentSecondTrue", a: "2021-10-02 15:04:04", b: "2021-10-02 15:04:05", want: true},
+		{name: "false", args: args{a: time.Date(9999, 4, 12, 23, 20, 50, 520*1e6, time.UTC), b: time.Date(1996, 12, 19, 16, 39, 57, 0, time.UTC)}, want: false},
+		{name: "true", args: args{a: time.Date(1996, 12, 19, 16, 39, 57, 0, time.UTC), b: time.Date(9999, 4, 12, 23, 20, 50, 520*1e6, time.UTC)}, want: true},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			start, err := StringToTimeTime(layout, tt.a)
-			if err != nil {
-				t.Errorf("string to time.Time conversiton error: %v", err)
-			}
-			end, err := StringToTimeTime(layout, tt.b)
-			if err != nil {
-				t.Errorf("string to time.Time conversiton error: %v", err)
-			}
-
-			result := IsTimeAfter(start, end)
-			if result != tt.want {
-				t.Errorf("got %t, want %t", result, tt.want)
+			if got := IsTimeAfter(tt.args.a, tt.args.b); got != tt.want {
+				t.Errorf("IsTimeAfter() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestMilisecondsToTimeTime(t *testing.T) {
-	var tests = []struct {
-		name string
-		got  int64
-		want string
-	}{
-		{name: "milisecond to time.Time", got: 1633694979000, want: "2021-10-08 12:09:39"},
-		{name: "milisecond to time.Time", got: 1633691379000, want: "2021-10-08 11:09:39"},
-		{name: "milisecond to time.Time", got: 1633086579000, want: "2021-10-01 11:09:39"},
+	type args struct {
+		ms int64
 	}
-
+	tests := []struct {
+		name string
+		args args
+		want time.Time
+	}{
+		{name: "1221681866000", args: args{1221681866000}, want: time.Date(2008, 9, 17, 20, 4, 26, 0, time.UTC)},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := MilisecondsToTimeTime(tt.got).Format(layout)
-			if result != tt.want {
-				t.Errorf("got %s, want %s", result, tt.want)
+			if got := MilisecondsToTimeTime(tt.args.ms); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MilisecondsToTimeTime() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStringToTimeTime(t *testing.T) {
+	type args struct {
+		format string
+		day    string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    time.Time
+		wantErr bool
+	}{
+		{name: "RFC3339 format", args: args{format: time.RFC3339, day: "2008-09-17T20:04:26Z"}, want: time.Date(2008, 9, 17, 20, 4, 26, 0, time.UTC), wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := StringToTimeTime(tt.args.format, tt.args.day)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("StringToTimeTime() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("StringToTimeTime() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTimeTimeToString(t *testing.T) {
-	var tests = []struct {
+	type args struct {
+		t time.Time
+	}
+	tests := []struct {
 		name string
-		got  string
+		args args
 		want string
 	}{
-		{name: "timeTimeToString 1", got: "2021-10-02 15:04:05", want: "2021-10-02 15:04:05 +0000 UTC"},
+		{name: "toString1", args: args{time.Date(9999, 4, 12, 23, 20, 50, 520*1e6, time.UTC)}, want: "9999-04-12 23:20:50.52 +0000 UTC"},
+		{name: "toString2", args: args{time.Date(1996, 12, 19, 16, 39, 57, 0, time.UTC)}, want: "1996-12-19 16:39:57 +0000 UTC"},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			toTimeTime, err := StringToTimeTime(layout, tt.got)
-			if err != nil {
-				t.Errorf("string to time.Time conversiton error: %v", err)
-			}
-
-			result := TimeTimeToString(toTimeTime)
-
-			if result != tt.want {
-				t.Errorf("got %s, want %s", result, tt.want)
+			if got := TimeTimeToString(tt.args.t); got != tt.want {
+				t.Errorf("TimeTimeToString() = %v, want %v", got, tt.want)
 			}
 		})
 	}
