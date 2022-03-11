@@ -39,6 +39,7 @@ func Initialize(formatter log.Formatter) *log.Logger {
 	return logger
 }
 
+//SetDefaultFields, you can have fields always attached to log statements in application
 func SetDefaultFields(fields map[string]interface{}) {
 	field = fields
 }
